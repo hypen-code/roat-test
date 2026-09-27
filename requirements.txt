@@ -1,4 +1,6 @@
 agno[mcp]
+bleach
 fastapi
+markdown
 openai
 uvicorn[standard]

@@ -1,6 +1,6 @@
 # Agno Docs Chatbot on Roar
 
-A small FastAPI chatbot that connects to the Agno documentation MCP server. It uses `qwen3.8-27b` to retrieve documentation through MCP because Roar reports tool calling for that model, then uses the requested `qwen3.8-27b-lk` model to write the answer without tool calls. This works around the LK endpoint rejecting `tool_choice="auto"`.
+A small FastAPI chatbot that connects to the Agno documentation MCP server. It uses `qwen3.8-27b` to retrieve documentation through MCP because Roar reports tool calling for that model, then uses the requested `qwen3.8-27b-lk` model to write the answer without tool calls. This works around the LK endpoint rejecting `tool_choice="auto"`. Assistant answers are rendered as sanitized Markdown in the glass-style chat UI.
 
 ## Run locally
 

@@ -7,6 +7,8 @@ from agno.models.openai.like import OpenAILike
 from agno.tools.mcp import MCPTools
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse
+import bleach
+import markdown
 from pydantic import BaseModel, Field
 
 
@@ -107,7 +109,22 @@ async def chat(payload: ChatRequest, authorization: str | None = Header(default=
         # Keep provider, MCP and secret details out of the public response.
         raise HTTPException(status_code=502, detail="The assistant could not complete that request.") from exc
 
-    return {"reply": str(result.content or "I couldn't produce a response. ")}
+    reply = str(result.content or "I couldn't produce a response.")
+    rendered = markdown.markdown(
+        reply,
+        extensions=["fenced_code", "sane_lists", "tables"],
+    )
+    safe_html = bleach.clean(
+        rendered,
+        tags={
+            "a", "blockquote", "br", "code", "del", "em", "h1", "h2", "h3",
+            "h4", "h5", "h6", "hr", "li", "ol", "p", "pre", "strong",
+            "table", "tbody", "td", "th", "thead", "tr", "ul",
+        },
+        attributes={"a": ["href", "title"]},
+        strip=True,
+    )
+    return {"reply": reply, "reply_html": safe_html}
 
 
 HTML = r"""<!doctype html>
@@ -118,24 +135,43 @@ HTML = r"""<!doctype html>
   <meta name="theme-color" content="#10131b">
   <title>Agno Docs Chat</title>
   <style>
-    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; background: #10131b; color: #eef1f7; display: grid; place-items: center; padding: 20px; }
-    main { width: min(760px, 100%); height: min(850px, calc(100vh - 40px)); display: flex; flex-direction: column; background: #171b26; border: 1px solid #2b3140; border-radius: 20px; overflow: hidden; box-shadow: 0 24px 80px #0005; }
-    header { padding: 22px 24px; border-bottom: 1px solid #2b3140; }
-    h1 { font-size: 18px; margin: 0 0 5px; }
-    header p { margin: 0; color: #9ca6ba; font-size: 13px; }
-    #messages { flex: 1; overflow: auto; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
-    .message { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; max-width: 88%; padding: 12px 15px; border-radius: 15px; }
-    .user { align-self: flex-end; background: #7058de; color: white; border-bottom-right-radius: 5px; }
-    .assistant { align-self: flex-start; background: #222837; border: 1px solid #32394a; border-bottom-left-radius: 5px; }
-    .status { color: #9ca6ba; font-size: 13px; padding: 0 22px 12px; }
-    form { display: flex; gap: 10px; padding: 16px; border-top: 1px solid #2b3140; }
-    textarea { flex: 1; resize: none; min-height: 48px; max-height: 130px; border: 1px solid #343c4e; border-radius: 12px; padding: 13px; color: inherit; background: #11151e; font: inherit; outline: none; }
-    textarea:focus { border-color: #8978f3; }
-    button { border: 0; border-radius: 12px; padding: 0 19px; background: #7864e8; color: white; font: inherit; font-weight: 650; cursor: pointer; }
-    button:disabled { opacity: .5; cursor: wait; }
-    @media (max-width: 520px) { body { padding: 0; } main { height: 100dvh; border-radius: 0; border: 0; } .message { max-width: 94%; } }
+    body { margin: 0; min-height: 100vh; color: #f3f4fb; display: grid; place-items: center; padding: 24px; background: radial-gradient(ellipse at 18% 8%, #704ee52b, transparent 36%), radial-gradient(ellipse at 88% 92%, #22b8a61a, transparent 35%), #0b0d14; }
+    main { width: min(820px, 100%); height: min(880px, calc(100vh - 48px)); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ffffff20; border-radius: 26px; background: linear-gradient(145deg, #ffffff0d, #ffffff04 44%, #7966df0a), #11141edb; box-shadow: 0 30px 100px #0008, inset 0 1px #ffffff12; backdrop-filter: blur(28px) saturate(145%); -webkit-backdrop-filter: blur(28px) saturate(145%); }
+    header { position: relative; padding: 24px 27px 21px; border-bottom: 1px solid #ffffff12; background: linear-gradient(105deg, #ffffff08, transparent 65%); }
+    header:after { content: ""; position: absolute; left: 27px; right: 27px; bottom: -1px; height: 1px; background: linear-gradient(90deg, #9b83ff8c, #ffffff05 72%); }
+    h1 { font-size: 18px; letter-spacing: -.025em; margin: 0 0 6px; font-weight: 680; }
+    header p { margin: 0; color: #a8b0c4; font-size: 13px; }
+    #messages { flex: 1; overflow: auto; padding: 25px; display: flex; flex-direction: column; gap: 17px; scroll-behavior: smooth; scrollbar-color: #ffffff2b transparent; scrollbar-width: thin; }
+    .message { overflow-wrap: anywhere; line-height: 1.65; max-width: 88%; padding: 14px 17px; border-radius: 18px; animation: arrive .24s ease-out both; }
+    .user { align-self: flex-end; color: #fff; background: linear-gradient(135deg, #8c71f5, #674de0); border: 1px solid #c4b7ff4d; border-bottom-right-radius: 6px; box-shadow: 0 8px 24px #694de533, inset 0 1px #ffffff30; white-space: pre-wrap; }
+    .assistant { align-self: flex-start; color: #e9ecf5; background: linear-gradient(145deg, #ffffff0c, #ffffff05), #1b202dd9; border: 1px solid #ffffff16; border-bottom-left-radius: 6px; box-shadow: 0 10px 32px #0002, inset 0 1px #ffffff0c; }
+    .assistant > :first-child { margin-top: 0; }
+    .assistant > :last-child { margin-bottom: 0; }
+    .assistant p { margin: .65em 0; }
+    .assistant h1, .assistant h2, .assistant h3, .assistant h4 { line-height: 1.3; margin: 1em 0 .45em; }
+    .assistant h1 { font-size: 1.35em; } .assistant h2 { font-size: 1.18em; } .assistant h3 { font-size: 1.06em; }
+    .assistant ul, .assistant ol { padding-left: 1.4em; margin: .65em 0; }
+    .assistant li + li { margin-top: .3em; }
+    .assistant blockquote { margin: .8em 0; padding: .2em .9em; color: #bbc3d5; border-left: 2px solid #a18cff; }
+    .assistant a { color: #b9aaff; text-decoration-color: #b9aaff77; text-underline-offset: 3px; }
+    .assistant code { font: .9em ui-monospace, SFMono-Regular, Consolas, monospace; padding: .15em .38em; border-radius: 6px; background: #090c14a8; color: #d7ceff; }
+    .assistant pre { overflow-x: auto; padding: 14px; border: 1px solid #ffffff12; border-radius: 12px; background: #090c14b8; }
+    .assistant pre code { padding: 0; background: none; color: #d8deee; }
+    .assistant table { width: 100%; border-collapse: collapse; margin: .8em 0; font-size: .94em; }
+    .assistant th, .assistant td { padding: 8px 10px; text-align: left; border: 1px solid #ffffff20; }
+    .assistant th { background: #ffffff0b; }
+    .status { color: #a8b0c4; font-size: 13px; padding: 0 25px 12px; }
+    form { display: flex; gap: 11px; padding: 15px 17px 17px; border-top: 1px solid #ffffff12; background: #0b0e17a8; }
+    textarea { flex: 1; resize: none; min-height: 49px; max-height: 130px; border: 1px solid #ffffff20; border-radius: 15px; padding: 13px 15px; color: inherit; background: #0b0e17a8; font: inherit; outline: none; box-shadow: inset 0 1px 5px #0003; transition: border-color .18s, box-shadow .18s; }
+    textarea::placeholder { color: #818aa0; }
+    textarea:focus { border-color: #a18cffb3; box-shadow: 0 0 0 3px #8266ec22, inset 0 1px 5px #0003; }
+    button { min-width: 78px; border: 1px solid #c9bdff4a; border-radius: 14px; padding: 0 18px; background: linear-gradient(145deg, #8b72f1, #6e54df); color: white; font: inherit; font-weight: 650; cursor: pointer; box-shadow: 0 8px 22px #694de533, inset 0 1px #ffffff3a; transition: transform .16s, filter .16s; }
+    button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); }
+    button:disabled { opacity: .55; cursor: wait; }
+    @keyframes arrive { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 520px) { body { padding: 0; } main { width: 100%; height: 100dvh; border-radius: 0; border: 0; } header { padding: 20px 19px 18px; } #messages { padding: 19px 15px; } .message { max-width: 95%; } form { padding: 12px; } }
   </style>
 </head>
 <body>
@@ -159,10 +195,11 @@ HTML = r"""<!doctype html>
     const history = [];
     let accessToken = sessionStorage.getItem('chatbot-access-token') || '';
 
-    function addMessage(role, content) {
+    function addMessage(role, content, renderedMarkdown = false) {
       const node = document.createElement('div');
       node.className = `message ${role}`;
-      node.textContent = content;
+      if (role === 'assistant' && renderedMarkdown) node.innerHTML = renderedMarkdown;
+      else node.textContent = content;
       messagesEl.append(node);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
@@ -193,12 +230,12 @@ HTML = r"""<!doctype html>
           if (!retry || !retry.ok) throw new Error('Access token was not accepted.');
           const data = await retry.json();
           history.push({ role: 'assistant', content: data.reply });
-          addMessage('assistant', data.reply);
+          addMessage('assistant', data.reply, data.reply_html);
         } else {
           const data = await response.json();
           if (!response.ok) throw new Error(data.detail || 'Request failed.');
           history.push({ role: 'assistant', content: data.reply });
-          addMessage('assistant', data.reply);
+          addMessage('assistant', data.reply, data.reply_html);
         }
       } catch (error) {
         addMessage('assistant', `Sorry, I couldn't answer that. ${error.message}`);
