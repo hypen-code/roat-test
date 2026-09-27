@@ -1,0 +1,4 @@
+agno[mcp]
+fastapi
+openai
+uvicorn[standard]
