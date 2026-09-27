@@ -1,6 +1,6 @@
 # Agno Docs Chatbot on Roar
 
-A small FastAPI chatbot that connects an Agno agent to the Agno documentation MCP server. It uses the Roar AI gateway for inference and defaults to `qwen3.8-27b-lk`.
+A small FastAPI chatbot that connects to the Agno documentation MCP server. It uses `qwen3.8-27b` to retrieve documentation through MCP because Roar reports tool calling for that model, then uses the requested `qwen3.8-27b-lk` model to write the answer without tool calls. This works around the LK endpoint rejecting `tool_choice="auto"`.
 
 ## Run locally
 
@@ -32,7 +32,8 @@ For a public URL, set `CHATBOT_ACCESS_TOKEN` in the app's Environment settings b
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `MODEL_ID` | `qwen3.8-27b-lk` | Roar model name |
+| `MCP_MODEL_ID` | `qwen3.8-27b` | Model used for MCP tool calls; set this to another Roar model that supports tool calling if needed |
 | `AGNO_MCP_URL` | `https://docs.agno.com/mcp` | Agno documentation MCP endpoint |
 | `CHATBOT_ACCESS_TOKEN` | unset | Optional shared access token for the web app |
 
-Agno's MCP integration uses Streamable HTTP. Roar's app-provided AI key and gateway URL are read only on the server. The app does not persist chat history after the browser session is cleared.
+Agno's MCP integration uses Streamable HTTP. Roar's app-provided AI key and gateway URL are read only on the server. Each chat turn makes a docs-lookup call and an answer call. The app does not persist chat history after the browser session is cleared.
