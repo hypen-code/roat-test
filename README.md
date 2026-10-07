@@ -36,4 +36,4 @@ For a public URL, set `CHATBOT_ACCESS_TOKEN` in the app's Environment settings b
 | `AGNO_MCP_URL` | `https://docs.agno.com/mcp` | Agno documentation MCP endpoint |
 | `CHATBOT_ACCESS_TOKEN` | unset | Optional shared access token for the web app |
 
-Agno's MCP integration uses Streamable HTTP. Roar's app-provided AI key and gateway URL are read only on the server. Each chat turn makes a docs-lookup call and an answer call. The app does not persist chat history after the browser session is cleared.
+Agno's MCP integration uses Streamable HTTP. Roar's app-provided AI key and gateway URL are read only on the server. Each chat turn makes a docs-lookup call and an answer call. The app does not persist chat history after the browser session is cleared..
